@@ -1,0 +1,39 @@
+[project]
+name = "term"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "jaxtyping",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "pyright",
+    "beartype",
+]
+tf = [
+    "tensorflow",
+]
+
+[tool.uv]
+package = false
+default-groups = ["dev", "tf"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["project", "lecture", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["F722", "UP040"]
+
+[tool.pyright]
+include = ["main.py", "submit.py", "src"]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
