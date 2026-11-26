@@ -30,7 +30,7 @@ select = ["E", "F", "W", "I", "UP", "B"]
 ignore = ["F722", "UP040", "UP047"]
 
 [tool.pyright]
-include = ["main.py", "src", "analysis"]
+include = ["main.py", "plot_submission.py", "src", "analysis"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 venvPath = "."
