@@ -9,6 +9,7 @@ IdVec: TypeAlias = Int64[np.ndarray, " n"]
 DataVec: TypeAlias = Float64[np.ndarray, " n"]
 LossVec: TypeAlias = Float64[np.ndarray, " n_epochs"]
 BatchVec: TypeAlias = Float64[np.ndarray, " b"]
+IndexVec: TypeAlias = Int64[np.ndarray, " m"]
 
 DataTensor: TypeAlias = Float64[tf.Tensor, " n"]
 DesignTensor: TypeAlias = Float64[tf.Tensor, "n p"]

@@ -12,6 +12,7 @@ SRC_MODULES: tuple[str, ...] = (
     "loss",
     "optim",
     "dataloader",
+    "kfold",
     "trainer",
     "plot",
     "config",

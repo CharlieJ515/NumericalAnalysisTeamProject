@@ -22,3 +22,6 @@ lr = 0.01
 [dataloader]
 name = "MiniBatchLoader"
 batch_size = 256
+
+[kfold]
+n_splits = 5
