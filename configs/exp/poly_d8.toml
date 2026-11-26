@@ -1,0 +1,31 @@
+seed = 42
+n_epochs = 200
+
+[paths]
+train = "data/train.csv"
+test = "data/test.csv"
+out = "outputs/exp/poly_d8"
+submission = "submission.csv"
+loss_figure = "loss.png"
+checkpoint = "ckpt.npz"
+cv = "cv.json"
+
+[model]
+name = "PolynomialModel"
+degree = 8
+center = 5.0
+scale = 5.0
+
+[loss]
+name = "MSELoss"
+
+[optimizer]
+name = "Adam"
+lr = 0.01
+
+[dataloader]
+name = "MiniBatchLoader"
+batch_size = 1024
+
+[kfold]
+n_splits = 5

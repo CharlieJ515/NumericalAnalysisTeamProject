@@ -1,4 +1,5 @@
 import argparse
+import json
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,7 @@ def main(config: dict[str, Any]) -> None:
     submission_path = out / paths["submission"]
     loss_figure_path = out / paths["loss_figure"]
     checkpoint_path = out / paths["checkpoint"]
+    cv_path = out / paths["cv"]
 
     np.random.seed(seed)
     out.mkdir(parents=True, exist_ok=True)
@@ -45,9 +47,25 @@ def main(config: dict[str, Any]) -> None:
 
     if "kfold" in config:
         kfold = KFold(seed=seed, **config["kfold"])
-        for fold, (train_idx, _) in enumerate(kfold.split(x_train.shape[0])):
-            _, fold_history = train_model(config, x_train[train_idx], y_train[train_idx], seed)
-            print(f"fold={fold} final_train_loss={fold_history[-1]:.6f}")
+        val_rmses: list[float] = []
+        for fold, (train_idx, val_idx) in enumerate(kfold.split(x_train.shape[0])):
+            fold_model, fold_history = train_model(
+                config, x_train[train_idx], y_train[train_idx], seed
+            )
+
+            y_val_pred = fold_model(tf.constant(x_train[val_idx])).numpy()
+            val_rmse = float(np.sqrt(np.mean((y_val_pred - y_train[val_idx]) ** 2)))
+            val_rmses.append(val_rmse)
+            print(f"fold={fold} final_train_loss={fold_history[-1]:.6f} val_rmse={val_rmse:.6f}")
+
+        cv_result = {
+            "val_rmse": val_rmses,
+            "mean": float(np.mean(val_rmses)),
+            "std": float(np.std(val_rmses)),
+        }
+        cv_path.write_text(json.dumps(cv_result, indent=2), encoding="utf-8")
+        print(f"cv_val_rmse={cv_result['mean']:.6f} ± {cv_result['std']:.6f}")
+        print(f"saved={cv_path}")
 
     model, loss_history = train_model(config, x_train, y_train, seed)
 

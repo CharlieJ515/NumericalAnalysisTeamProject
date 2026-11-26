@@ -8,6 +8,7 @@ out = "outputs"
 submission = "submission.csv"
 loss_figure = "loss_l2.png"
 checkpoint = "baseline_ckpt.npz"
+cv = "cv.json"
 
 [model]
 name = "LinearModel"
