@@ -609,11 +609,11 @@ wheels = [
 name = "term"
 version = "0.1.0"
 source = { virtual = "." }
-default-groups = ["dev", "tf"]
 dependencies = [
     { name = "jaxtyping" },
     { name = "matplotlib" },
     { name = "numpy" },
+    { name = "tensorflow" },
 ]
 
 [package.dev-dependencies]
@@ -622,15 +622,13 @@ dev = [
     { name = "pyright" },
     { name = "ruff" },
 ]
-tf = [
-    { name = "tensorflow" },
-]
 
 [package.metadata]
 requires-dist = [
     { name = "jaxtyping" },
     { name = "matplotlib" },
     { name = "numpy" },
+    { name = "tensorflow" },
 ]
 
 [package.metadata.requires-dev]
@@ -639,7 +637,6 @@ dev = [
     { name = "pyright" },
     { name = "ruff" },
 ]
-tf = [{ name = "tensorflow" }]
 
 [[package]]
 name = "termcolor"

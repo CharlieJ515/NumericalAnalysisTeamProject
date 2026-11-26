@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 
-from src.typedefs import DataVec, IdVec, LossVec, ParamVec
+from src.typedefs import DataVec, IdVec
 
 TRAIN_COLUMNS = ("id", "x", "y")
 TEST_COLUMNS = ("id", "x")
@@ -61,16 +61,3 @@ def save_submission(ids: IdVec, y_pred: DataVec, path: Path) -> None:
         file.write("id,y_pred\n")
         for sample_id, pred in zip(ids, y_pred, strict=True):
             file.write(f"{int(sample_id)},{pred:.10f}\n")
-
-
-def save_checkpoint(
-    theta: ParamVec,
-    loss_history: LossVec,
-    path: Path,
-) -> None:
-    """학습된 theta를 복원할 수 있게 npz로 저장한다."""
-    np.savez(
-        path,
-        theta=np.asarray(theta, dtype=np.float64),
-        loss_history=np.asarray(loss_history, dtype=np.float64),
-    )

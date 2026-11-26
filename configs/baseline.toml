@@ -1,0 +1,24 @@
+seed = 42
+n_epochs = 100
+
+[paths]
+train = "data/train.csv"
+test = "data/test.csv"
+out = "outputs"
+submission = "submission.csv"
+loss_figure = "loss_l2.png"
+checkpoint = "baseline_ckpt.npz"
+
+[model]
+name = "LinearModel"
+
+[loss]
+name = "MSELoss"
+
+[optimizer]
+name = "SGD"
+lr = 0.01
+
+[dataloader]
+name = "MiniBatchLoader"
+batch_size = 256

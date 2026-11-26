@@ -1,46 +1,115 @@
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Any
+
 import numpy as np
+import tensorflow as tf
 
-from src.typedefs import DataVec, DesignMat, ParamVec
-
-
-def make_design_matrix(x: DataVec) -> DesignMat:
-    """1차 다항의 설계행렬. 각 행은 [1, x]이다."""
-    x = np.asarray(x, dtype=np.float64)
-    return np.column_stack([np.ones_like(x), x])
+from src.typedefs import DataTensor, DesignTensor, Params
 
 
-def model(X: DesignMat, theta: ParamVec) -> DataVec:
-    return X @ theta
+class Model(ABC):
+    @abstractmethod
+    def __call__(self, x: DataTensor) -> DataTensor: ...
+
+    @abstractmethod
+    def parameters(self) -> Params: ...
+
+    def named_parameters(self) -> dict[str, tf.Variable]:
+        named = {param.name.split(":")[0]: param for param in self.parameters()}
+        if len(named) != len(self.parameters()):
+            raise ValueError(f"파라미터 이름이 중복됩니다: {[p.name for p in self.parameters()]}")
+        return named
+
+    def save(self, path: Path) -> None:
+        arrays: dict[str, Any] = {
+            name: param.numpy() for name, param in self.named_parameters().items()
+        }
+        np.savez(path, **arrays)
+
+    def load(self, path: Path) -> None:
+        named = self.named_parameters()
+        with np.load(path) as ckpt:
+            if set(ckpt.files) != set(named):
+                raise ValueError(
+                    f"파라미터 이름이 다릅니다: {sorted(ckpt.files)} != {sorted(named)}"
+                )
+
+            for name, param in named.items():
+                value = ckpt[name]
+                if value.shape != tuple(param.shape):
+                    raise ValueError(f"{name}의 shape이 다릅니다: {value.shape} != {param.shape}")
+                param.assign(value)
 
 
-def loss(X: DesignMat, y: DataVec, theta: ParamVec) -> float:
-    """평균 제곱오차. L2 손실이다."""
-    residual = model(X, theta) - y
-    return np.mean(residual**2)
+class LinearModel(Model):
+    def __init__(self) -> None:
+        self.theta = tf.Variable(tf.zeros(2, dtype=tf.float64), name="theta")
+
+    def parameters(self) -> Params:
+        return [self.theta]
+
+    def features(self, x: DataTensor) -> DesignTensor:
+        return tf.stack([tf.ones_like(x), x], axis=1)
+
+    def __call__(self, x: DataTensor) -> DataTensor:
+        return tf.linalg.matvec(self.features(x), self.theta)
 
 
-def loss_grad(X: DesignMat, y: DataVec, theta: ParamVec) -> ParamVec:
-    """loss = mean((X theta - y)^2) 의 해석적 gradient.
+class PolynomialModel(Model):
+    def __init__(self, degree: int, center: float = 0.0, scale: float = 1.0) -> None:
+        if degree < 0:
+            raise ValueError("degree는 0 이상이어야 합니다.")
+        if scale <= 0:
+            raise ValueError("scale은 양수여야 합니다.")
 
-    d(loss)/d(theta) = (2 / n) X^T (X theta - y)
-    """
-    residual = model(X, theta) - y
-    return (2.0 / y.shape[0]) * (X.T @ residual)
+        self.degree = degree
+        self.center = center
+        self.scale = scale
+        self.theta = tf.Variable(tf.zeros(degree + 1, dtype=tf.float64), name="theta")
+
+    def parameters(self) -> Params:
+        return [self.theta]
+
+    def features(self, x: DataTensor) -> DesignTensor:
+        z = (x - self.center) / self.scale
+        return tf.stack([z**k for k in range(self.degree + 1)], axis=1)
+
+    def __call__(self, x: DataTensor) -> DataTensor:
+        return tf.linalg.matvec(self.features(x), self.theta)
 
 
-def loss_grad_tape(X: DesignMat, y: DataVec, theta: ParamVec) -> ParamVec:
-    """같은 gradient를 tf.GradientTape로 계산하는 예제.
+class ExponentialModel(Model):
+    def __init__(self, alpha: float = 1.0, beta: float = 0.0) -> None:
+        self.alpha = tf.Variable(tf.constant(alpha, dtype=tf.float64), name="alpha")
+        self.beta = tf.Variable(tf.constant(beta, dtype=tf.float64), name="beta")
 
-    기본 학습 루프는 loss_grad를 사용한다. TensorFlow가 설치된 환경에서
-    이 함수로 바꾼 뒤에도 갱신 식은 gradient_descent 안에 직접 둔다.
-    """
-    import tensorflow as tf
+    def parameters(self) -> Params:
+        return [self.alpha, self.beta]
 
-    x_tf = tf.constant(X, dtype=tf.float64)
-    y_tf = tf.constant(y, dtype=tf.float64)
-    theta_tf = tf.Variable(tf.constant(theta, dtype=tf.float64))
-    with tf.GradientTape() as tape:
-        residual = tf.linalg.matvec(x_tf, theta_tf) - y_tf
-        value = tf.reduce_mean(residual**2)
-    grad = tape.gradient(value, theta_tf)
-    return tf.convert_to_tensor(grad).numpy()
+    def __call__(self, x: DataTensor) -> DataTensor:
+        return self.alpha * tf.exp(self.beta * x)
+
+
+class SaturationModel(Model):
+    def __init__(self, alpha: float = 1.0, beta: float = 1.0) -> None:
+        self.alpha = tf.Variable(tf.constant(alpha, dtype=tf.float64), name="alpha")
+        self.beta = tf.Variable(tf.constant(beta, dtype=tf.float64), name="beta")
+
+    def parameters(self) -> Params:
+        return [self.alpha, self.beta]
+
+    def __call__(self, x: DataTensor) -> DataTensor:
+        return self.alpha * x / (self.beta + x)
+
+
+class PowerModel(Model):
+    def __init__(self, alpha: float = 1.0, beta: float = 1.0) -> None:
+        self.alpha = tf.Variable(tf.constant(alpha, dtype=tf.float64), name="alpha")
+        self.beta = tf.Variable(tf.constant(beta, dtype=tf.float64), name="beta")
+
+    def parameters(self) -> Params:
+        return [self.alpha, self.beta]
+
+    def __call__(self, x: DataTensor) -> DataTensor:
+        return self.alpha * tf.pow(x, self.beta)
