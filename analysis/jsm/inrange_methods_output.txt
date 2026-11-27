@@ -1,0 +1,10 @@
+  raw = np.diff(ys) / np.diff(xs); keep = np.isfinite(raw) & (np.abs(raw) < 1e5)
+20th Legendre LS             CV RMSE 0.2003 ± 0.0009   (0.2s)  f(10,11,12) = [-2.13000e+00 -1.58750e+02 -6.68446e+03]
+piecewise cubic (9 seg, LS)  CV RMSE 0.2007 ± 0.0009   (0.9s)  f(10,11,12) = [-2.11  0.12 12.68]
+smoothing spline             CV RMSE 0.2006 ± 0.0009   (1.0s)  f(10,11,12) = [-2.07000e+00  4.78220e+02  3.49348e+03]
+kNN (k=200)                  CV RMSE 0.2008 ± 0.0009   (2.3s)  f(10,11,12) = [-2.09 -2.09 -2.09]
+gradient boosting            CV RMSE 0.2023 ± 0.0010   (4.5s)  f(10,11,12) = [-2.08 -2.08 -2.08]
+MLP 64x64 tanh               CV RMSE 0.2045 ± 0.0021   (83.8s)  f(10,11,12) = [-2.08 -2.4  -2.21]
+500-sample init  20th Legendre LS             full-data RMSE median 0.2051, worst 0.2104
+500-sample init  piecewise cubic (9 seg, LS)  full-data RMSE median 0.2090, worst 0.2126
+raw diff std: 10153.5  spline f'(10): 2.779  f''(10): 165.07
